@@ -1,0 +1,13 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+
+/dts-v1/;
+
+#include "v3caninos.dtsi"
+
+/ {
+	/* keep_bootcon console=tty0 loglevel=7*/
+	chosen {
+		bootargs = "earlycon console=ttyS3,115200 console=tty0 root=/dev/mmcblk2p1 rw rootwait no_console_suspend";
+	};
+};
+

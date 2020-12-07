@@ -9,6 +9,7 @@ subdir-y += apm
 subdir-y += arm
 subdir-y += bitmain
 subdir-y += broadcom
+subdir-y += caninos
 subdir-y += cavium
 subdir-y += exynos
 subdir-y += freescale

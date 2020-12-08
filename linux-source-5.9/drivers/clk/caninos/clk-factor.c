@@ -61,7 +61,7 @@ static unsigned long caninos_factor_recalc_rate(struct clk_hw *hw,
     const struct clk_factor_table *clkt;
     u32 val;
     
-    val = clk_readl(factor->reg) >> factor->shift;
+    val = readl(factor->reg) >> factor->shift;
 	val &= _mask(factor);
 	
 	for (clkt = factor->table; clkt->div; clkt++)
@@ -84,7 +84,7 @@ static int caninos_factor_set_rate(struct clk_hw *hw, unsigned long rate,
     struct caninos_factor *factor = to_caninos_factor(hw);
     const struct clk_factor_table *clkt, *best_clkt = NULL;
     unsigned long parent_rate, best_rate, new_rate;
-    unsigned long uninitialized_var(flags);
+    unsigned long flags;
     u32 val;
     
     parent_rate = clk_hw_get_rate(clk_hw_get_parent(hw));
@@ -111,10 +111,10 @@ static int caninos_factor_set_rate(struct clk_hw *hw, unsigned long rate,
         __acquire(factor->lock);
     }
     
-    val = clk_readl(factor->reg);
+    val = readl(factor->reg);
     val &= ~(_mask(factor) << factor->shift);
     val |= best_clkt->val << factor->shift;
-    clk_writel(val, factor->reg);
+    writel(val, factor->reg);
     
     if (factor->lock) {
         spin_unlock_irqrestore(factor->lock, flags);

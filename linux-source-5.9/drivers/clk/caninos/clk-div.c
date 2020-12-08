@@ -42,7 +42,7 @@ static long caninos_divider_ro_round_rate(struct clk_hw *hw,
     struct caninos_divider *divider = to_caninos_divider(hw);
     u32 val;
     
-    val = clk_readl(divider->reg) >> divider->shift;
+    val = readl(divider->reg) >> divider->shift;
     val &= _mask(divider);
     
     return divider_ro_round_rate(hw, rate, prate, divider->table,
@@ -64,7 +64,7 @@ static unsigned long caninos_divider_recalc_rate(struct clk_hw *hw,
     struct caninos_divider *divider = to_caninos_divider(hw);
     u32 val;
     
-    val = clk_readl(divider->reg) >> divider->shift;
+    val = readl(divider->reg) >> divider->shift;
     val &= _mask(divider);
     
     return divider_recalc_rate(hw, parent_rate, val, divider->table,
@@ -75,7 +75,7 @@ static int caninos_divider_set_rate(struct clk_hw *hw, unsigned long rate,
                                     unsigned long parent_rate)
 {
     struct caninos_divider *divider = to_caninos_divider(hw);
-    unsigned long uninitialized_var(flags);
+    unsigned long flags;
     int value;
     u32 val;
     
@@ -93,11 +93,11 @@ static int caninos_divider_set_rate(struct clk_hw *hw, unsigned long rate,
         __acquire(divider->lock);
     }
     
-    val = clk_readl(divider->reg);
+    val = readl(divider->reg);
     val &= ~(_mask(divider) << divider->shift);
 	
     val |= (u32)value << divider->shift;
-    clk_writel(val, divider->reg);
+    writel(val, divider->reg);
     
     if (divider->lock) {
         spin_unlock_irqrestore(divider->lock, flags);

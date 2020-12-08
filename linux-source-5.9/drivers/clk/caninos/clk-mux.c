@@ -41,7 +41,7 @@ static u8 caninos_mux_get_parent(struct clk_hw *hw)
     struct caninos_mux *mux = to_caninos_mux(hw);
     u32 val;
     
-    val = clk_readl(mux->reg) >> mux->shift;
+    val = readl(mux->reg) >> mux->shift;
     val &= _mask(mux);
     
     return clk_mux_val_to_index(hw, NULL, mux->flags, val);
@@ -50,7 +50,7 @@ static u8 caninos_mux_get_parent(struct clk_hw *hw)
 static int caninos_mux_set_parent(struct clk_hw *hw, u8 index)
 {
     struct caninos_mux *mux = to_caninos_mux(hw);
-    unsigned long uninitialized_var(flags);
+    unsigned long flags;
     u32 val, aux;
     
     aux = clk_mux_index_to_val(NULL, mux->flags, index);
@@ -63,10 +63,10 @@ static int caninos_mux_set_parent(struct clk_hw *hw, u8 index)
         __acquire(mux->lock);
     }
     
-    val = clk_readl(mux->reg);
+    val = readl(mux->reg);
     val &= ~(_mask(mux) << mux->shift);
     val |= aux << mux->shift;
-    clk_writel(val, mux->reg);
+    writel(val, mux->reg);
     
     if (mux->lock) {
         spin_unlock_irqrestore(mux->lock, flags);

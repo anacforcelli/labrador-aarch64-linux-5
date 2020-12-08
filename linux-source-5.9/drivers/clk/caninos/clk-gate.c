@@ -37,7 +37,7 @@
 static void caninos_gate_endisable(struct clk_hw *hw, u8 enable)
 {
     struct caninos_gate *gate = to_caninos_gate(hw);
-    unsigned long uninitialized_var(flags);
+    unsigned long flags;
     u32 val;
     
     if (gate->lock) {
@@ -47,7 +47,7 @@ static void caninos_gate_endisable(struct clk_hw *hw, u8 enable)
         __acquire(gate->lock);
     }
     
-    val = clk_readl(gate->reg);
+    val = readl(gate->reg);
     
     if (enable) {
         val |= BIT(gate->bit_idx);
@@ -56,7 +56,7 @@ static void caninos_gate_endisable(struct clk_hw *hw, u8 enable)
         val &= ~BIT(gate->bit_idx);
     }
     
-    clk_writel(val, gate->reg);
+    writel(val, gate->reg);
     
     if (gate->lock) {
         spin_unlock_irqrestore(gate->lock, flags);
@@ -69,7 +69,7 @@ static void caninos_gate_endisable(struct clk_hw *hw, u8 enable)
 static int caninos_gate_is_enabled(struct clk_hw *hw)
 {
     struct caninos_gate *gate = to_caninos_gate(hw);
-    return (clk_readl(gate->reg) & BIT(gate->bit_idx)) ? 1 : 0;
+    return (readl(gate->reg) & BIT(gate->bit_idx)) ? 1 : 0;
 }
 
 static int caninos_gate_enable(struct clk_hw *hw)

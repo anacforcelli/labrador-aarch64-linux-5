@@ -136,7 +136,7 @@ static int caninos_pll_set_rate(struct clk_hw *hw, unsigned long rate,
                                 unsigned long parent_rate)
 {
     struct caninos_pll *pll = to_caninos_pll(hw);
-    unsigned long uninitialized_var(flags);
+    unsigned long flags;
     u32 val, aux;
     
     if (pll->width == 0) {
@@ -159,10 +159,10 @@ static int caninos_pll_set_rate(struct clk_hw *hw, unsigned long rate,
         __acquire(pll->lock);
     }
     
-	val = clk_readl(pll->reg);
+	val = readl(pll->reg);
 	val &= ~(_mask(pll) << pll->shift);
 	val |= aux << pll->shift;
-	clk_writel(val, pll->reg);
+	writel(val, pll->reg);
 	
 	udelay(PLL_STABILITY_WAIT_US);
 	
@@ -185,7 +185,7 @@ static unsigned long pll_get_rate(struct clk_hw *hw)
         return pll->bfreq;
     }
     
-    val = clk_readl(pll->reg) >> pll->shift;
+    val = readl(pll->reg) >> pll->shift;
     val &= _mask(pll);
     
     if (pll->table) {
@@ -212,7 +212,7 @@ static int caninos_pll_is_enabled(struct clk_hw *hw)
     struct caninos_pll *pll = to_caninos_pll(hw);
     u32 val;
 
-    val = clk_readl(pll->reg);
+    val = readl(pll->reg);
     val &= BIT(pll->enable_bit);
 
     return val ? 1 : 0;
@@ -221,7 +221,7 @@ static int caninos_pll_is_enabled(struct clk_hw *hw)
 static void caninos_pll_endisable(struct clk_hw *hw, u8 enable)
 {
     struct caninos_pll *pll = to_caninos_pll(hw);
-    unsigned long uninitialized_var(flags);
+    unsigned long flags;
     u32 val;
     
     if (pll->lock) {
@@ -231,7 +231,7 @@ static void caninos_pll_endisable(struct clk_hw *hw, u8 enable)
         __acquire(pll->lock);
     }
     
-    val = clk_readl(pll->reg);
+    val = readl(pll->reg);
     
     if (enable) {
         val |= BIT(pll->enable_bit);
@@ -240,7 +240,7 @@ static void caninos_pll_endisable(struct clk_hw *hw, u8 enable)
         val &= ~BIT(pll->enable_bit);
     }
     
-    clk_writel(val, pll->reg);
+    writel(val, pll->reg);
     
     if (enable) {
         udelay(PLL_STABILITY_WAIT_US);

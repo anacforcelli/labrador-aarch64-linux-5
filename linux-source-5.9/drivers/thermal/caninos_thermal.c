@@ -36,13 +36,6 @@ static int caninos_tsensdata_to_mcelsius(unsigned int tsens_data)
 	return (int)((temp1 + temp2) / 10);
 }
 
-static int caninos_get_mode(struct thermal_zone_device *thermal,
-                            enum thermal_device_mode *mode)
-{
-	*mode = THERMAL_DEVICE_ENABLED;
-	return 0;
-}
-
 static int caninos_get_temp(struct thermal_zone_device *thermal, int *temp)
 {
 	struct caninos_tmu_sensor *sensor = thermal->devdata;
@@ -56,7 +49,6 @@ static int caninos_get_temp(struct thermal_zone_device *thermal, int *temp)
 
 static struct thermal_zone_device_ops caninos_tmu_ops = {
 	.get_temp = caninos_get_temp,
-	.get_mode = caninos_get_mode,
 };
 
 static int read_raw_thermal_sensor(int id, struct caninos_tmu_data *data)

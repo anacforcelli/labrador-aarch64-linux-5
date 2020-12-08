@@ -84,11 +84,11 @@ static void aotg_plat_data_fill(struct device *dev, int dev_id)
 	
 	if (0 == dev_id)
 	{
-		aotg_data[0].usbecs = devm_ioremap_nocache(dev, 0xE024c094, 4);
+		aotg_data[0].usbecs = devm_ioremap(dev, 0xE024c094, 4);
 	}
 	else if (1 == dev_id)
 	{
-		aotg_data[1].usbecs = devm_ioremap_nocache(dev, 0xE024c098, 4);
+		aotg_data[1].usbecs = devm_ioremap(dev, 0xE024c098, 4);
 	}
 	else {
 		BUG_ON(1);

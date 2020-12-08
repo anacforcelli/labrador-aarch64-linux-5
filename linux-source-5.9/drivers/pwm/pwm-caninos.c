@@ -52,7 +52,7 @@ static void caninos_pwm_free(struct pwm_chip *chip, struct pwm_device *pwm)
 }
 
 static int caninos_pwm_apply(struct pwm_chip *chip, struct pwm_device *pwm,
-                             struct pwm_state *state)
+                             const struct pwm_state *state)
 {
 	struct caninos_pwm_chip *pc = to_caninos_pwm_chip(chip);
 	unsigned long period_cycles, duty_cycles;

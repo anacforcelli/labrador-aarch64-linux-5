@@ -378,7 +378,7 @@ static int snd_caninos_probe(struct platform_device *pdev)
 	
 	chip->phys_base = res->start;
 	
-	chip->base = devm_ioremap_nocache(dev, res->start, resource_size(res));
+	chip->base = devm_ioremap(dev, res->start, resource_size(res));
 	
 	if (IS_ERR(chip->base))
 	{

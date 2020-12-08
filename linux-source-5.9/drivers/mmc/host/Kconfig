@@ -1005,6 +1005,13 @@ config MMC_BCM2835
 
 	  If unsure, say N.
 
+config MMC_CANINOS
+	tristate "Caninos MMC Controller support"
+	depends on ARCH_CANINOS || COMPILE_TEST
+	default y
+	help
+	 Enable Caninos Labrador MMC Controller support.
+
 config MMC_MTK
 	tristate "MediaTek SD/MMC Card Interface support"
 	depends on HAS_DMA

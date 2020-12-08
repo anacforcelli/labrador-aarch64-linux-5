@@ -140,6 +140,13 @@ config SUN5I_HSTIMER
 	help
 	  Enables support the Sun5i timer.
 
+config CANINOS_TIMER
+	bool "Caninos timer driver" if COMPILE_TEST
+	select CLKSRC_MMIO
+	depends on ARCH_CANINOS
+	help
+	  Enables the support for the Caninos Labrador timer driver.
+
 config TEGRA_TIMER
 	bool "Tegra timer driver" if COMPILE_TEST
 	select CLKSRC_MMIO

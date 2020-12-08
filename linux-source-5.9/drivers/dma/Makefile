@@ -84,6 +84,7 @@ obj-$(CONFIG_ZX_DMA) += zx_dma.o
 obj-$(CONFIG_ST_FDMA) += st_fdma.o
 obj-$(CONFIG_FSL_DPAA2_QDMA) += fsl-dpaa2-qdma/
 
+obj-y += caninos/
 obj-y += mediatek/
 obj-y += qcom/
 obj-y += ti/

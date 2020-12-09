@@ -97,7 +97,7 @@ enum hdmi_vid_table {
 	
 };
 
-enum hdmi_packet_type {
+enum __hdmi_packet_type {
 	PACKET_AVI_SLOT		= 0,
 	PACKET_AUDIO_SLOT	= 1,
 	PACKET_SPD_SLOT		= 2,

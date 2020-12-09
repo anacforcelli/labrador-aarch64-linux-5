@@ -26,7 +26,7 @@
 #include "stmmac_platform.h"
 
 struct caninos_priv_data {
-	int interface;
+	phy_interface_t interface;
 	int clk_enabled;
 	struct clk *tx_clk;
 	int powergpio;
@@ -100,14 +100,14 @@ erro_gpio_request:
 	return ret;
 }
 
-static int caninos_gmac_interface_config(int mode)
+static int caninos_gmac_interface_config(phy_interface_t mode)
 {
 	void __iomem *addr = NULL;
 	u32 aux;
 	
 	if (mode == PHY_INTERFACE_MODE_RGMII)
 	{
-		addr = ioremap_nocache(0xe01680ac, 4);
+		addr = ioremap(0xe01680ac, 4);
 		
 		if (addr == NULL) {
 			return -ENOMEM;
@@ -120,7 +120,7 @@ static int caninos_gmac_interface_config(int mode)
 		
 		iounmap(addr);
 		
-		addr = ioremap_nocache(0xe01b0080, 4);
+		addr = ioremap(0xe01b0080, 4);
 		
 		if (addr == NULL) {
 			return -ENOMEM;
@@ -135,7 +135,7 @@ static int caninos_gmac_interface_config(int mode)
 	}
 	else
 	{
-		addr = ioremap_nocache(0xe01b0080, 4);
+		addr = ioremap(0xe01b0080, 4);
 		
 		if (addr == NULL) {
 			return -ENOMEM;
@@ -149,7 +149,7 @@ static int caninos_gmac_interface_config(int mode)
 		iounmap(addr);
 	}
 	
-	addr = ioremap_nocache(0xe024c0a0, 4);
+	addr = ioremap(0xe024c0a0, 4);
 	
 	if (addr == NULL) {
 		return -ENOMEM;
@@ -283,7 +283,11 @@ static int caninos_gmac_probe(struct platform_device *pdev)
 		goto err_remove_config_dt;
 	}
 	
-	gmac->interface = of_get_phy_mode(dev->of_node);
+	ret = of_get_phy_mode(dev->of_node, &(gmac->interface));
+	
+	if (ret) {
+		goto err_remove_config_dt;
+	}
 	
 	gmac->tx_clk = devm_clk_get(dev, "rmii_ref");
 	

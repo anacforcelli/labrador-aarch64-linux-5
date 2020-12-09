@@ -201,7 +201,7 @@ config DWMAC_CANINOS
 	tristate "Caninos Labrador DWMAC support"
 	default ARCH_CANINOS
 	depends on OF && (ARCH_CANINOS || COMPILE_TEST)
-	---help---
+	help
 	  Support for Caninos Labrador ethernet controllers.
 
 	  This selects Caninos Labrador SoC glue layer support for the

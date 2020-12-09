@@ -38,6 +38,7 @@
 #include <drm/drm_simple_kms_helper.h>
 #include <drm/drm_vblank.h>
 #include <drm/drm_drv.h>
+#include <drm/drm_probe_helper.h>
 
 #include "gfx_drv.h"
 
@@ -153,28 +154,15 @@ static void caninos_gfx_unload(struct drm_device *drm)
 DEFINE_DRM_GEM_CMA_FOPS(fops);
 
 static struct drm_driver caninos_gfx_driver = {
-    .driver_features = DRIVER_GEM | DRIVER_MODESET |
-                       DRIVER_PRIME | DRIVER_ATOMIC,
-    .gem_free_object_unlocked = drm_gem_cma_free_object,
-    .gem_print_info = drm_gem_cma_print_info,
-    .gem_vm_ops = &drm_gem_cma_vm_ops,
-    .dumb_create = drm_gem_cma_dumb_create,
-    .prime_handle_to_fd = drm_gem_prime_handle_to_fd,
-    .prime_fd_to_handle = drm_gem_prime_fd_to_handle,
-    .gem_prime_export = drm_gem_prime_export,
-    .gem_prime_import = drm_gem_prime_import,
-    .gem_prime_get_sg_table = drm_gem_cma_prime_get_sg_table,
-    .gem_prime_import_sg_table = drm_gem_cma_prime_import_sg_table,
-    .gem_prime_vmap = drm_gem_cma_prime_vmap,
-    .gem_prime_vunmap = drm_gem_cma_prime_vunmap,
-    .gem_prime_mmap = drm_gem_cma_prime_mmap,
-    
-    .fops = &fops,
+    .driver_features = DRIVER_MODESET | DRIVER_GEM | DRIVER_ATOMIC,
     .name = "caninosdrm",
     .desc = "CANINOS DRM",
     .date = "20200121",
     .major = 1,
     .minor = 0,
+    .patchlevel = 0,
+    .fops = &fops,
+    DRM_GEM_CMA_DRIVER_OPS,
 };
 
 static const struct of_device_id caninos_gfx_match[] = {

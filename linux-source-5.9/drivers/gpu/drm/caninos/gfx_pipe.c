@@ -14,7 +14,6 @@
  * GNU General Public License for more details.
  */
 
-#include <drm/drmP.h>
 #include <drm/drm_atomic.h>
 #include <drm/drm_atomic_helper.h>
 #include <drm/drm_crtc_helper.h>
@@ -22,6 +21,8 @@
 #include <drm/drm_gem_framebuffer_helper.h>
 #include <drm/drm_gem_cma_helper.h>
 #include <drm/drm_fb_cma_helper.h>
+#include <drm/drm_vblank.h>
+#include <drm/drm_probe_helper.h>
 
 #include "gfx_drv.h"
 

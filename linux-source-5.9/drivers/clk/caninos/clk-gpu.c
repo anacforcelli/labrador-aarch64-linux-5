@@ -195,7 +195,8 @@ void __init k7_gpu_clk_init(struct device_node *np)
     }
 
     // increase the gpu clock to 400MHz
-    clk_set_rate(priv_data->core, 400000000);
+    // Decreased to 300MHz for testing!
+    clk_set_rate(priv_data->core, 300000000);
     
     // free memory resources
     iounmap(sps_base);

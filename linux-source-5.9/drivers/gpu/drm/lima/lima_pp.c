@@ -334,9 +334,11 @@ static void lima_pp_task_run(struct lima_sched_pipe *pipe,
 		struct lima_device *dev = pipe->bcast_processor->dev;
 		struct lima_ip *ip = pipe->bcast_processor;
 		int i;
-
+		
 		pipe->done = 0;
 		atomic_set(&pipe->task, frame->num_pp);
+		
+		udelay(100);
 
 		if (frame->use_dlbu) {
 			lima_dlbu_enable(dev, frame->num_pp);

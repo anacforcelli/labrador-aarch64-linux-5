@@ -137,10 +137,6 @@ static int caninos_gfx_load(struct drm_device *drm, struct hdmi_ip_ops *hdmi_ip)
 		return ret;
 	}
 	
-	drm_mode_config_reset(drm);
-	
-	drm_fbdev_generic_setup(drm, 32);
-	
 	return 0;
 }
 
@@ -155,7 +151,8 @@ DEFINE_DRM_GEM_CMA_FOPS(fops);
 
 static struct drm_driver caninos_gfx_driver = {
     .driver_features = DRIVER_MODESET | DRIVER_GEM | DRIVER_ATOMIC,
-    .name = "caninosdrm",
+    //.name = "caninosdrm",
+    .name = "stm",
     .desc = "CANINOS DRM",
     .date = "20200121",
     .major = 1,
@@ -211,13 +208,17 @@ static int caninos_gfx_probe(struct platform_device *pdev)
 	if (ret) {
 		goto err_free;
 	}
-
+	
 	ret = drm_dev_register(drm, 0);
 	
 	if (ret) {
 		goto err_unload;
 	}
-
+	
+	drm_mode_config_reset(drm);
+	
+	drm_fbdev_generic_setup(drm, 32);
+	
 	return 0;
 
 err_unload:

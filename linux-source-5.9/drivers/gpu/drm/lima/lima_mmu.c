@@ -16,8 +16,9 @@
 #define lima_mmu_send_command(cmd, addr, val, cond)	     \
 ({							     \
 	int __ret;					     \
-							     \
+	mb();						     \
 	mmu_write(LIMA_MMU_COMMAND, cmd);		     \
+	wmb(); \
 	__ret = readl_poll_timeout(ip->iomem + (addr), val,  \
 				  cond, 0, 100);	     \
 	if (__ret)					     \
@@ -30,15 +31,21 @@ static irqreturn_t lima_mmu_irq_handler(int irq, void *data)
 {
 	struct lima_ip *ip = data;
 	struct lima_device *dev = ip->dev;
-	u32 status = mmu_read(LIMA_MMU_INT_STATUS);
+	volatile u32 status;
 	struct lima_sched_pipe *pipe;
+	
+	mb();
+	status = mmu_read(LIMA_MMU_INT_STATUS);
+	rmb();
 
 	/* for shared irq case */
 	if (!status)
 		return IRQ_NONE;
 
-	if (status & LIMA_MMU_INT_PAGE_FAULT) {
-		u32 fault = mmu_read(LIMA_MMU_PAGE_FAULT_ADDR);
+	if (status & LIMA_MMU_INT_PAGE_FAULT)
+	{
+		volatile u32 fault = mmu_read(LIMA_MMU_PAGE_FAULT_ADDR);
+		rmb();
 
 		dev_err(dev->dev, "mmu page fault at 0x%x from bus id %d of type %s on %s\n",
 			fault, LIMA_MMU_STATUS_BUS_ID(status),
@@ -52,6 +59,7 @@ static irqreturn_t lima_mmu_irq_handler(int irq, void *data)
 	/* mask all interrupts before resume */
 	mmu_write(LIMA_MMU_INT_MASK, 0);
 	mmu_write(LIMA_MMU_INT_CLEAR, status);
+	wmb();
 
 	pipe = dev->pipe + (ip->id == lima_ip_gpmmu ? lima_pipe_gp : lima_pipe_pp);
 	lima_sched_pipe_mmu_error(pipe);
@@ -64,7 +72,8 @@ static int lima_mmu_hw_init(struct lima_ip *ip)
 	struct lima_device *dev = ip->dev;
 	int err;
 	u32 v;
-
+	
+	mb();
 	mmu_write(LIMA_MMU_COMMAND, LIMA_MMU_COMMAND_HARD_RESET);
 	err = lima_mmu_send_command(LIMA_MMU_COMMAND_HARD_RESET,
 				    LIMA_MMU_DTE_ADDR, v, v == 0);
@@ -73,6 +82,7 @@ static int lima_mmu_hw_init(struct lima_ip *ip)
 
 	mmu_write(LIMA_MMU_INT_MASK,
 		  LIMA_MMU_INT_PAGE_FAULT | LIMA_MMU_INT_READ_BUS_ERROR);
+    wmb();
 	mmu_write(LIMA_MMU_DTE_ADDR, dev->empty_vm->pd.dma);
 	return lima_mmu_send_command(LIMA_MMU_COMMAND_ENABLE_PAGING,
 				     LIMA_MMU_STATUS, v,
@@ -99,8 +109,9 @@ int lima_mmu_init(struct lima_ip *ip)
 
 	if (ip->id == lima_ip_ppmmu_bcast)
 		return 0;
-
+    mb();
 	mmu_write(LIMA_MMU_DTE_ADDR, 0xCAFEBABE);
+	wmb();
 	if (mmu_read(LIMA_MMU_DTE_ADDR) != 0xCAFEB000) {
 		dev_err(dev->dev, "mmu %s dte write test fail\n", lima_ip_name(ip));
 		return -EIO;
@@ -123,19 +134,22 @@ void lima_mmu_fini(struct lima_ip *ip)
 
 void lima_mmu_flush_tlb(struct lima_ip *ip)
 {
+    mb();
 	mmu_write(LIMA_MMU_COMMAND, LIMA_MMU_COMMAND_ZAP_CACHE);
+	mb();
 }
 
 void lima_mmu_switch_vm(struct lima_ip *ip, struct lima_vm *vm)
 {
 	struct lima_device *dev = ip->dev;
 	u32 v;
-
+    
 	lima_mmu_send_command(LIMA_MMU_COMMAND_ENABLE_STALL,
 			      LIMA_MMU_STATUS, v,
 			      v & LIMA_MMU_STATUS_STALL_ACTIVE);
 
 	mmu_write(LIMA_MMU_DTE_ADDR, vm->pd.dma);
+	mb();
 
 	/* flush the TLB */
 	mmu_write(LIMA_MMU_COMMAND, LIMA_MMU_COMMAND_ZAP_CACHE);
@@ -155,10 +169,12 @@ void lima_mmu_page_fault_resume(struct lima_ip *ip)
 		dev_info(dev->dev, "mmu resume\n");
 
 		mmu_write(LIMA_MMU_INT_MASK, 0);
+		wmb();
 		mmu_write(LIMA_MMU_DTE_ADDR, 0xCAFEBABE);
 		lima_mmu_send_command(LIMA_MMU_COMMAND_HARD_RESET,
 				      LIMA_MMU_DTE_ADDR, v, v == 0);
 		mmu_write(LIMA_MMU_INT_MASK, LIMA_MMU_INT_PAGE_FAULT | LIMA_MMU_INT_READ_BUS_ERROR);
+		wmb();
 		mmu_write(LIMA_MMU_DTE_ADDR, dev->empty_vm->pd.dma);
 		lima_mmu_send_command(LIMA_MMU_COMMAND_ENABLE_PAGING,
 				      LIMA_MMU_STATUS, v,

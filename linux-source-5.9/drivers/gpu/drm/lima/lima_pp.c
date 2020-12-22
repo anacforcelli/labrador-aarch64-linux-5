@@ -22,10 +22,12 @@ static void lima_pp_handle_irq(struct lima_ip *ip, u32 state)
 {
 	struct lima_device *dev = ip->dev;
 	struct lima_sched_pipe *pipe = dev->pipe + lima_pipe_pp;
-
+    
+    mb();
+    
 	if (state & LIMA_PP_IRQ_MASK_ERROR)
 	{
-		u32 status = pp_read(LIMA_PP_STATUS);
+		volatile u32 status = pp_read(LIMA_PP_STATUS);
 		rmb();
 
 		dev_err(dev->dev, "pp error irq state=%x status=%x\n",
@@ -35,7 +37,6 @@ static void lima_pp_handle_irq(struct lima_ip *ip, u32 state)
 
 		/* mask all interrupts before hard reset */
 		pp_write(LIMA_PP_INT_MASK, 0);
-		wmb();
 	}
 
 	pp_write(LIMA_PP_INT_CLEAR, state);
@@ -47,9 +48,13 @@ static irqreturn_t lima_pp_irq_handler(int irq, void *data)
 	struct lima_ip *ip = data;
 	struct lima_device *dev = ip->dev;
 	struct lima_sched_pipe *pipe = dev->pipe + lima_pipe_pp;
-	u32 state = pp_read(LIMA_PP_INT_STATUS);
+	volatile u32 state;
+	
+	mb();
+	
+	state = pp_read(LIMA_PP_INT_STATUS);
 	rmb();
-
+	
 	/* for shared irq case */
 	if (!state)
 		return IRQ_NONE;
@@ -80,7 +85,7 @@ static irqreturn_t lima_pp_bcast_irq_handler(int irq, void *data)
 	for (i = 0; i < frame->num_pp; i++)
 	{
 		struct lima_ip *ip = pipe->processor[i];
-		u32 status, state;
+		volatile u32 status, state;
 
 		if (pipe->done & (1 << i))
 			continue;
@@ -88,6 +93,7 @@ static irqreturn_t lima_pp_bcast_irq_handler(int irq, void *data)
 		/* status read first in case int state change in the middle
 		 * which may miss the interrupt handling
 		 */
+		mb();
 		status = pp_read(LIMA_PP_STATUS);
 		state = pp_read(LIMA_PP_INT_STATUS);
 		rmb();
@@ -112,7 +118,8 @@ static void lima_pp_soft_reset_async(struct lima_ip *ip)
 {
 	if (ip->data.async_reset)
 		return;
-
+    mb();
+    
 	pp_write(LIMA_PP_INT_MASK, 0);
 	pp_write(LIMA_PP_INT_RAWSTAT, LIMA_PP_IRQ_MASK_ALL);
 	wmb();
@@ -125,8 +132,18 @@ static void lima_pp_soft_reset_async(struct lima_ip *ip)
 
 static int lima_pp_soft_reset_poll(struct lima_ip *ip)
 {
-	return !(pp_read(LIMA_PP_STATUS) & LIMA_PP_STATUS_RENDERING_ACTIVE) &&
-		pp_read(LIMA_PP_INT_RAWSTAT) == LIMA_PP_IRQ_RESET_COMPLETED;
+    volatile u32 stat, raw_stat;
+    mb();
+    
+    stat = pp_read(LIMA_PP_STATUS);
+    raw_stat = pp_read(LIMA_PP_INT_RAWSTAT);
+    rmb();
+    
+    if (!(stat & LIMA_PP_STATUS_RENDERING_ACTIVE) &&
+		(raw_stat == LIMA_PP_IRQ_RESET_COMPLETED)) {
+		return 1;
+	}
+	return 0;
 }
 
 static int lima_pp_soft_reset_async_wait_one(struct lima_ip *ip)
@@ -134,7 +151,7 @@ static int lima_pp_soft_reset_async_wait_one(struct lima_ip *ip)
 	struct lima_device *dev = ip->dev;
 	int ret;
 	
-	rmb();
+	mb();
 
 	ret = lima_poll_timeout(ip, lima_pp_soft_reset_poll, 0, 100);
 	if (ret) {
@@ -172,6 +189,7 @@ static int lima_pp_soft_reset_async_wait(struct lima_ip *ip)
 static void lima_pp_write_frame(struct lima_ip *ip, u32 *frame, u32 *wb)
 {
 	int i, j, n = 0;
+	mb();
 
 	for (i = 0; i < LIMA_PP_FRAME_REG_NUM; i++)
 	{
@@ -190,9 +208,15 @@ static void lima_pp_write_frame(struct lima_ip *ip, u32 *frame, u32 *wb)
 
 static int lima_pp_hard_reset_poll(struct lima_ip *ip)
 {
+    volatile u32 aux;
+    
 	pp_write(LIMA_PP_PERF_CNT_0_LIMIT, 0xC01A0000);
-	wmb();
-	return pp_read(LIMA_PP_PERF_CNT_0_LIMIT) == 0xC01A0000;
+	mb();
+	
+	aux = pp_read(LIMA_PP_PERF_CNT_0_LIMIT);
+	rmb();
+	
+	return (aux == 0xC01A0000) ? 1 : 0;
 }
 
 static int lima_pp_hard_reset(struct lima_ip *ip)
@@ -228,8 +252,9 @@ static void lima_pp_print_version(struct lima_ip *ip)
 {
 	u32 version, major, minor;
 	char *name;
-
+    mb();
 	version = pp_read(LIMA_PP_VERSION);
+	rmb();
 	major = (version >> 8) & 0xFF;
 	minor = version & 0xFF;
 	switch (version >> 16) {
@@ -288,8 +313,9 @@ int lima_pp_init(struct lima_ip *ip)
 			lima_ip_name(ip));
 		return err;
 	}
-
+    mb();
 	dev->pp_version = pp_read(LIMA_PP_VERSION);
+	rmb();
 
 	return 0;
 }
@@ -378,15 +404,13 @@ static void lima_pp_task_run(struct lima_sched_pipe *pipe,
 		else {
 			lima_dlbu_disable(dev);
 		}
-		wmb();
-
+		
 		lima_bcast_enable(dev, frame->num_pp);
-		wmb();
 
 		lima_pp_soft_reset_async_wait(ip);
 
 		lima_pp_write_frame(ip, frame->frame, frame->wb);
-
+        
 		for (i = 0; i < frame->num_pp; i++)
 		{
 			struct lima_ip *ip = pipe->processor[i];
@@ -443,12 +467,12 @@ static void lima_pp_task_fini(struct lima_sched_pipe *pipe)
 static void lima_pp_task_error(struct lima_sched_pipe *pipe)
 {
 	int i;
+	
+	mb();
 
 	for (i = 0; i < pipe->num_processor; i++) {
 		struct lima_ip *ip = pipe->processor[i];
 		
-		rmb();
-
 		dev_err(ip->dev->dev, "pp task error %d int_state=%x status=%x\n",
 			i, pp_read(LIMA_PP_INT_STATUS), pp_read(LIMA_PP_STATUS));
 

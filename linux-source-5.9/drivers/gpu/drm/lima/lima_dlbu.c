@@ -17,6 +17,8 @@ void lima_dlbu_enable(struct lima_device *dev, int num_pp)
 	struct lima_sched_pipe *pipe = dev->pipe + lima_pipe_pp;
 	struct lima_ip *ip = dev->ip + lima_ip_dlbu;
 	int i, mask = 0;
+	
+	mb();
 
 	for (i = 0; i < num_pp; i++) {
 		struct lima_ip *pp = pipe->processor[i];
@@ -25,6 +27,7 @@ void lima_dlbu_enable(struct lima_device *dev, int num_pp)
 	}
 
 	dlbu_write(LIMA_DLBU_PP_ENABLE_MASK, mask);
+	wmb();
 }
 
 void lima_dlbu_disable(struct lima_device *dev)
@@ -32,22 +35,28 @@ void lima_dlbu_disable(struct lima_device *dev)
 	struct lima_ip *ip = dev->ip + lima_ip_dlbu;
 
 	dlbu_write(LIMA_DLBU_PP_ENABLE_MASK, 0);
+	wmb();
 }
 
 void lima_dlbu_set_reg(struct lima_ip *ip, u32 *reg)
 {
+    mb();
 	dlbu_write(LIMA_DLBU_TLLIST_VBASEADDR, reg[0]);
 	dlbu_write(LIMA_DLBU_FB_DIM, reg[1]);
 	dlbu_write(LIMA_DLBU_TLLIST_CONF, reg[2]);
 	dlbu_write(LIMA_DLBU_START_TILE_POS, reg[3]);
+	wmb();
 }
 
 static int lima_dlbu_hw_init(struct lima_ip *ip)
 {
 	struct lima_device *dev = ip->dev;
+	
+	mb();
 
 	dlbu_write(LIMA_DLBU_MASTER_TLLIST_PHYS_ADDR, dev->dlbu_dma | 1);
 	dlbu_write(LIMA_DLBU_MASTER_TLLIST_VADDR, LIMA_VA_RESERVE_DLBU);
+	wmb();
 
 	return 0;
 }

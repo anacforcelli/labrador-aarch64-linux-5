@@ -16,6 +16,7 @@ static int lima_l2_cache_wait_idle(struct lima_ip *ip)
 	struct lima_device *dev = ip->dev;
 	int err;
 	u32 v;
+	mb();
 
 	err = readl_poll_timeout(ip->iomem + LIMA_L2_CACHE_STATUS, v,
 				 !(v & LIMA_L2_CACHE_STATUS_COMMAND_BUSY),
@@ -41,6 +42,7 @@ int lima_l2_cache_flush(struct lima_ip *ip)
 static int lima_l2_cache_hw_init(struct lima_ip *ip)
 {
 	int err;
+	mb();
 
 	err = lima_l2_cache_flush(ip);
 	if (err)
@@ -50,6 +52,7 @@ static int lima_l2_cache_hw_init(struct lima_ip *ip)
 		       LIMA_L2_CACHE_ENABLE_ACCESS |
 		       LIMA_L2_CACHE_ENABLE_READ_ALLOCATE);
 	l2_cache_write(LIMA_L2_CACHE_MAX_READS, 0x1c);
+	wmb();
 
 	return 0;
 }

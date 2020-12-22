@@ -16,6 +16,8 @@ static int lima_pmu_wait_cmd(struct lima_ip *ip)
 	struct lima_device *dev = ip->dev;
 	int err;
 	u32 v;
+	
+	mb();
 
 	err = readl_poll_timeout(ip->iomem + LIMA_PMU_INT_RAWSTAT,
 				 v, v & LIMA_PMU_INT_CMD_MASK,
@@ -26,6 +28,7 @@ static int lima_pmu_wait_cmd(struct lima_ip *ip)
 	}
 
 	pmu_write(LIMA_PMU_INT_CLEAR, LIMA_PMU_INT_CMD_MASK);
+	wmb();
 	return 0;
 }
 
@@ -67,16 +70,20 @@ static int lima_pmu_hw_init(struct lima_ip *ip)
 {
 	int err;
 	u32 stat;
-
+	
+	mb();
 	pmu_write(LIMA_PMU_INT_MASK, 0);
+	wmb();
 
 	/* If this value is too low, when in high GPU clk freq,
 	 * GPU will be in unstable state.
 	 */
 	pmu_write(LIMA_PMU_SW_DELAY, 0xffff);
+	wmb();
 
 	/* status reg 1=off 0=on */
 	stat = pmu_read(LIMA_PMU_STATUS);
+	wmb();
 
 	/* power up all ip */
 	if (stat) {
@@ -98,13 +105,16 @@ static void lima_pmu_hw_fini(struct lima_ip *ip)
 	stat = ~pmu_read(LIMA_PMU_STATUS) & ip->data.mask;
 	if (stat) {
 		pmu_write(LIMA_PMU_POWER_DOWN, stat);
+		wmb();
 
 		/* Don't wait for interrupt on Mali400 if all domains are
 		 * powered off because the HW won't generate an interrupt
 		 * in this case.
 		 */
-		if (ip->dev->id == lima_gpu_mali400)
+		if (ip->dev->id == lima_gpu_mali400) {
 			pmu_write(LIMA_PMU_INT_CLEAR, LIMA_PMU_INT_CMD_MASK);
+			wmb();
+		}
 		else
 			lima_pmu_wait_cmd(ip);
 	}

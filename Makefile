@@ -1,7 +1,7 @@
 
 CURDIR=$(shell pwd)
 CPUS=$$(($(shell cat /sys/devices/system/cpu/present | awk -F- '{ print $$2 }')+1))
-KERNEL=$(CURDIR)/linux-source-5.9
+KERNEL=$(CURDIR)/linux-source-5.10
 BUILD=$(CURDIR)/build
 OUTPUT=$(CURDIR)/output
 COMPILER=aarch64-linux-gnu-

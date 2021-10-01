@@ -682,7 +682,7 @@
             
             resets = <&rst RST_GPU3D>;
             
-            status = "okay";
+            status = "disabled";
         };
 		
 		ethernet@e0220000 {

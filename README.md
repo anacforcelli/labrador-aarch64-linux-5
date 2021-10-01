@@ -82,25 +82,37 @@ $ sudo cp output/Image $ROOTFS/boot/
 system's root.
 
 ```
-$ sudo cp output/v3emmc.dtb $ROOTFS/boot/
-$ sudo cp output/v3sdc.dtb $ROOTFS/boot/
+$ sudo cp output/v3psci.dtb $ROOTFS/boot/
 ```
 >Note: $ROOTFS must be replaced by the complete directory path of your target
 system's root mounting point.
 
 ## Bootloader Installation
 
-To update the bootloader in a SDCARD use:
+1) To update the bootloader in a SDCARD use:
 ```
 $ sudo dd if=bootloader.bin of=/dev/$DEVNAME conv=notrunc seek=1 bs=512
 ```
-> Note: $DEVNAME is the name of the target device. It is not a partition name.
-You can use lsblk, to know it's name.
 
-To update the EMMC's bootloader from a live Linux system booted from SDCARD use:
+> Note: $DEVNAME is the name of the target device. It is not a partition name.
+You can use lsblk, to know it's name. The file "bootloader.bin" is located at 
+the folder "boot" of this repository.
+
+2) To update the EMMC's bootloader from a live Linux system booted from SDCARD 
+use:
 ```
 $ sudo dd if=bootloader.bin of=/dev/mmcblk2 conv=notrunc seek=1 bs=512
 ```
+
+3) The bootloader uses the configuration file "config.json". A sample is located 
+at the folder "boot" of this repository. It must be copied to the folder 
+"/boot/" of your SDCARD/EMMC system's root. 
+To copy this file to your system use:
+```
+$ sudo cp config.json $ROOTFS/boot/
+```
+>Note: $ROOTFS must be replaced by the complete directory path of your target
+system's root mounting point.
 
 ## Contributing
 
